@@ -77,7 +77,14 @@ git clone git@github.com:Arduey/store.git pay
 
 ### 3. 配置 config.json
 
-宝塔面板 → 文件 → 编辑 `/www/wwwroot/pay/config.json`，填写你的配置。
+```bash
+cd /www/wwwroot/pay
+cp config.example.json config.json
+```
+
+宝塔面板 → 文件 → 编辑 `/www/wwwroot/pay/config.json`，填写你的真实配置。
+
+> `config.json` 已加入 `.gitignore`，`git pull` 更新代码不会被覆盖。仓库里只有 `config.example.json` 模板文件。
 
 ### 4. 添加网站 + 反向代理
 

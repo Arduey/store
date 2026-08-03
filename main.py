@@ -31,6 +31,7 @@ def render_template(name: str, **context) -> HTMLResponse:
 # 配置加载
 # ============================================================
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
+CONFIG_EXAMPLE = os.path.join(BASE_DIR, "config.example.json")
 AFDIAN_API_BASE = "https://ifdian.net"
 
 PAY_TYPES = {
@@ -40,16 +41,14 @@ PAY_TYPES = {
 
 
 def load_config() -> dict:
-    """从 config.json 加载配置"""
-    try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {
-            "creator_user_id": "",
-            "small_auth_token": "",
-            "products": [],
-        }
+    """读取 config.json，不存在则回退到 config.example.json"""
+    for path in [CONFIG_FILE, CONFIG_EXAMPLE]:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            continue
+    return {"creator_user_id": "", "admin_password": "admin123", "products": []}
 
 
 def save_config(config: dict):
