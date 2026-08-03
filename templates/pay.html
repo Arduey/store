@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>付款 - {{ order.out_trade_no }}</title>
+    <link rel="stylesheet" href="/static/style2.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- 页头 -->
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="header-logo">
+                {% if site.header_icon_url %}
+                <img src="{{ site.header_icon_url }}" class="header-icon" alt="">
+                {% endif %}
+                {{ site.header_logo }}
+            </a>
+            <nav class="header-nav" id="header-nav">
+                {% for link in site.header_nav %}
+                <a href="{{ link.url }}" target="_blank">{{ link.label }}</a>
+                {% endfor %}
+            </nav>
+            <button class="header-menu-btn" id="menu-btn" onclick="toggleMenu()" aria-label="菜单">☰</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="page-title">扫码付款</h1>
+
+        <div class="order-card">
+            <div class="order-row">
+                <span class="order-label">商品</span>
+                <span class="order-value">{{ order.product_name }}</span>
+            </div>
+            <div class="order-row">
+                <span class="order-label">金额</span>
+                <span class="order-value price">¥{{ "%.2f"|format(order.amount) }}</span>
+            </div>
+            <div class="order-row">
+                <span class="order-label">方式</span>
+                <span class="order-value">
+                    {% if order.pay_type == 'alipay' %}
+                    <img src="https://files.getquicker.net/_icons/2ED559C1E1B522832FCB519D49E7ECD3B512ECE9.png" width="18" height="18" style="vertical-align:-4px;margin-right:4px;">支付宝
+                    {% else %}
+                    <img src="https://files.getquicker.net/_icons/DD2720346D6979233AAD2D58E2FC1BB8CF2AA1B6.png" width="18" height="18" style="vertical-align:-4px;margin-right:4px;">微信
+                    {% endif %}
+                </span>
+            </div>
+            <div class="order-row">
+                <span class="order-label">订单号</span>
+                <span class="order-value order-id">{{ order.out_trade_no }}</span>
+                <button class="btn btn-small copy-btn" onclick="copyOrderId()">复制</button>
+            </div>
+        </div>
+
+        {% if site.pay_tips %}
+        <div class="order-card order-tips">
+            <div class="order-row">
+                <span class="order-value tips-text">{{ site.pay_tips | replace('\n', '<br>') | safe }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="pay-section">
+            <p class="pay-hint">
+                {% if order.pay_type == 'alipay' %}
+                用 <strong>支付宝</strong> 扫下方二维码付款
+                {% else %}
+                用 <strong>微信</strong> 扫下方二维码付款
+                {% endif %}
+            </p>
+
+            <div id="qrcode-container" class="qrcode-container">
+                <div class="qr-placeholder">加载中...</div>
+            </div>
+            <p id="qr-label" class="qr-label" style="display:none;"></p>
+
+            <div id="open-btn-row" style="display:none; margin-top:16px;">
+                <a id="open-btn" href="#" target="_blank" class="btn btn-primary btn-large">在新窗口打开付款页面</a>
+            </div>
+        </div>
+
+        <div class="status-section">
+            <div id="status-pending" class="status-box pending">⏳ 等待付款中...</div>
+            <div id="status-paid" class="status-box paid" style="display:none;">✅ 付款成功！</div>
+            <div id="status-expired" class="status-box expired" style="display:none;">⏰ 订单已过期，<a href="/">返回首页</a></div>
+        </div>
+
+        <div class="back-link">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <span>{{ site.footer_text }}</span>
+        </div>
+    </footer>
+
+    <script>
+    const OUT_TRADE_NO = "{{ order.out_trade_no }}";
+    const PAY_TYPE = "{{ order.pay_type }}";
+
+    function toggleMenu() {
+        document.getElementById('header-nav').classList.toggle('open');
+    }
+
+    function copyOrderId() {
+        navigator.clipboard.writeText('{{ order.out_trade_no }}').then(function() {
+            var btn = document.querySelector('.copy-btn');
+            btn.textContent = '已复制';
+            setTimeout(function() { btn.textContent = '复制'; }, 1500);
+        });
+    }
+    (function() {
+        var nav = document.getElementById('header-nav');
+        var btn = document.getElementById('menu-btn');
+        if (!nav || !btn) return;
+        function check() {
+            if (window.innerWidth < 1000) {
+                nav.style.display = 'none';
+                btn.style.display = 'flex';
+            } else {
+                nav.style.display = 'flex';
+                btn.style.display = 'none';
+                nav.classList.remove('open');
+            }
+        }
+        check();
+        window.addEventListener('resize', check);
+        document.addEventListener('click', function(e) {
+            if (!nav.contains(e.target) && !btn.contains(e.target)) nav.classList.remove('open');
+        });
+    })();
+
+    async function loadQRCode() {
+        const container = document.getElementById("qrcode-container");
+        try {
+            const resp = await fetch('/api/order/' + OUT_TRADE_NO + '/qrcode');
+            const data = await resp.json();
+
+            if (PAY_TYPE === 'alipay' && data.type === 'url') {
+                container.innerHTML = '<div class="pay-iframe-wrapper">'
+                    + '<iframe src="' + data.url + '" '
+                    + 'sandbox="allow-scripts allow-same-origin allow-forms" '
+                    + 'loading="lazy" class="alipay-iframe"></iframe>'
+                    + '</div>';
+                document.getElementById("qr-label").textContent = '支付宝扫码';
+                document.getElementById("qr-label").style.color = 'var(--accent)';
+                document.getElementById("qr-label").style.display = 'block';
+                document.getElementById("open-btn").href = data.url;
+                document.getElementById("open-btn-row").style.display = 'block';
+            } else if (data.type === 'url') {
+                container.innerHTML = '<div id="qrcode"></div>';
+                try {
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: data.url, width: 200, height: 200,
+                        colorDark: "#1d1d1f", colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M,
+                    });
+                } catch (e) {
+                    container.innerHTML = '<p style="color:var(--danger);">二维码生成失败</p>';
+                }
+                document.getElementById("qr-label").textContent = '微信扫码';
+                document.getElementById("qr-label").style.color = '#07c160';
+                document.getElementById("qr-label").style.display = 'block';
+            } else if (data.type === 'image') {
+                container.innerHTML = '<img src="' + data.data_uri + '" class="qr-img" alt="付款二维码">';
+                document.getElementById("qr-label").textContent = '支付宝扫码';
+                document.getElementById("qr-label").style.color = 'var(--accent)';
+                document.getElementById("qr-label").style.display = 'block';
+            } else {
+                container.innerHTML = '<p style="color:var(--danger);">获取失败: ' + (data.error || '') + '</p>';
+            }
+        } catch (e) {
+            container.innerHTML = '<p style="color:var(--danger);">网络错误</p>';
+        }
+    }
+
+    loadQRCode();
+
+    let pollTimer = null;
+    async function checkStatus() {
+        try {
+            const resp = await fetch('/api/order/' + OUT_TRADE_NO + '/status');
+            const data = await resp.json();
+            if (data.status === 'paid') {
+                document.getElementById('status-pending').style.display = 'none';
+                document.getElementById('status-paid').style.display = 'inline-block';
+                clearInterval(pollTimer);
+            } else if (data.status === 'expired') {
+                document.getElementById('status-pending').style.display = 'none';
+                document.getElementById('status-expired').style.display = 'inline-block';
+                clearInterval(pollTimer);
+            }
+        } catch (e) {}
+    }
+    pollTimer = setInterval(checkStatus, 3000);
+    checkStatus();
+    </script>
+</body>
+</html>

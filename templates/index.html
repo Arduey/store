@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site.header_logo }}</title>
+    <link rel="stylesheet" href="/static/style2.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="header-logo">
+                {% if site.header_icon_url %}
+                <img src="{{ site.header_icon_url }}" class="header-icon" alt="">
+                {% endif %}
+                {{ site.header_logo }}
+            </a>
+            <nav class="header-nav" id="header-nav">
+                {% for link in site.header_nav %}
+                <a href="{{ link.url }}" target="_blank">{{ link.label }}</a>
+                {% endfor %}
+            </nav>
+            <button class="header-menu-btn" id="menu-btn" onclick="toggleMenu()" aria-label="菜单">☰</button>
+        </div>
+    </header>
+
+    <div class="container">
+        {% if not products %}
+        <div class="empty-hint"><p>暂无商品，请联系管理员</p></div>
+        {% else %}
+        <div class="buy-layout">
+            <!-- 左侧：商品列表 -->
+            <div class="buy-left">
+                <div class="buy-left-title">商品</div>
+                {% for product in products %}
+                <div class="buy-product-item {% if loop.first %}active{% endif %}"
+                     data-index="{{ loop.index0 }}"
+                     data-name="{{ product.name }}"
+                     title="{{ product.description or product.name }}">
+                    <span class="buy-product-name">{{ product.name }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- 中间：套餐价格 -->
+            <div class="buy-center">
+                <div class="buy-center-inner">
+                    {% for product in products %}
+                    <div class="buy-plans-panel {% if loop.first %}active{% endif %}"
+                         data-index="{{ loop.index0 }}">
+                        <div class="buy-plans-title">
+                            {{ product.name }}
+                            {% if product.url %}
+                            <a href="{{ product.url }}" target="_blank" class="buy-plans-link">跳转网站 ↗</a>
+                            {% endif %}
+                        </div>
+                        {% if product.description %}
+                        <div class="buy-plans-desc">{{ product.description }}</div>
+                        {% endif %}
+                        <div class="buy-plans-chips">
+                            {% for plan in product.plans %}
+                            <div class="plan-chip"
+                                 data-name="{{ product.name }}"
+                                 data-months="{{ plan.number }}"
+                                 data-unit="{{ plan.unit }}"
+                                 data-price="{{ "%.0f"|format(plan.price) }}">
+                                <span class="chip-label">{{ plan._label }}</span>
+                                <span class="chip-price">¥{{ "%.0f"|format(plan.price) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 右侧：支付 -->
+            <div class="buy-right">
+                <div class="buy-right-title">支付方式</div>
+                <div class="buy-pay-btns">
+                    <button class="pay-type-btn active" data-pay="alipay">
+                        <img src="https://files.getquicker.net/_icons/2ED559C1E1B522832FCB519D49E7ECD3B512ECE9.png" width="20" height="20" alt="">
+                        支付宝
+                    </button>
+                    <button class="pay-type-btn" data-pay="wechat">
+                        <img src="https://files.getquicker.net/_icons/DD2720346D6979233AAD2D58E2FC1BB8CF2AA1B6.png" width="20" height="20" alt="">
+                        微信
+                    </button>
+                </div>
+                <button class="btn btn-primary btn-large buy-submit-btn" id="submit-btn" disabled>
+                    选择套餐后付款
+                </button>
+                <div id="status-msg" class="status-msg" style="display:none;"></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-inner"><span>{{ site.footer_text }}</span></div>
+    </footer>
+
+    <script>
+    let selectedProductIdx = 0;   // 默认第一个
+    let selectedPlan = null;      // 选中的套餐 {name, months, price}
+    let selectedPayType = 'alipay';
+
+    function toggleMenu() {
+        document.getElementById('header-nav').classList.toggle('open');
+    }
+    // 手机端：768px 以下用汉堡菜单
+    (function() {
+        var nav = document.getElementById('header-nav');
+        var btn = document.getElementById('menu-btn');
+        if (!nav || !btn) return;
+        function check() {
+            if (window.innerWidth < 1000) {
+                nav.style.display = 'none';
+                btn.style.display = 'flex';
+            } else {
+                nav.style.display = 'flex';
+                btn.style.display = 'none';
+                nav.classList.remove('open');
+            }
+        }
+        check();
+        window.addEventListener('resize', check);
+        // 点击其他地方关闭菜单
+        document.addEventListener('click', function(e) {
+            if (!nav.contains(e.target) && !btn.contains(e.target)) nav.classList.remove('open');
+        });
+    })();
+
+    // ========== 左侧切换商品 ==========
+    document.querySelectorAll('.buy-product-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.index);
+            if (idx === selectedProductIdx) return;
+            switchProduct(idx);
+        });
+    });
+
+    function switchProduct(idx) {
+        selectedProductIdx = idx;
+        selectedPlan = null;
+        // 清除所有芯片选中状态
+        document.querySelectorAll('.plan-chip').forEach(c => c.classList.remove('selected'));
+        updateUI();
+    }
+
+    // ========== 中间选套餐 ==========
+    document.addEventListener('click', function(e) {
+        const chip = e.target.closest('.plan-chip');
+        if (!chip) return;
+
+        document.querySelectorAll('.plan-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedPlan = chip.dataset;
+        updateSubmitBtn();
+    });
+
+    // ========== 支付方式 ==========
+    document.querySelectorAll('.pay-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.pay-type-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedPayType = this.dataset.pay;
+        });
+    });
+    // 默认支付宝 active
+    document.querySelector('.pay-type-btn[data-pay="alipay"]').classList.add('active');
+
+    // ========== 提交 ==========
+    document.getElementById('submit-btn').addEventListener('click', function() {
+        if (!selectedPlan) return;
+        const msg = document.getElementById('status-msg');
+        msg.style.display = 'block';
+        msg.textContent = '正在生成订单...';
+        document.getElementById('submit-btn').innerHTML = '<span class="spinner"></span>生成中...';
+        this.disabled = true;
+        submitOrder(selectedPlan.name, selectedPlan.months, selectedPlan.unit, selectedPlan.price, selectedPayType);
+    });
+
+    async function submitOrder(name, months, unit, price, payType) {
+        const formData = new FormData();
+        formData.append('product_name', name);
+        formData.append('months', months);
+        formData.append('unit', unit || '月');
+        formData.append('price', price);
+        formData.append('pay_type', payType);
+        try {
+            const resp = await fetch('/create-order', { method: 'POST', body: formData });
+            const data = await resp.json();
+            if (data.error) {
+                document.getElementById('status-msg').textContent = data.error;
+                var eb = document.getElementById('submit-btn');
+                eb.disabled = false;
+                eb.textContent = '立即付款 ¥' + parseInt(price);
+                return;
+            }
+            window.location.href = '/pay/' + data.out_trade_no;
+        } catch (e) {
+            document.getElementById('status-msg').textContent = '网络错误';
+            var eb2 = document.getElementById('submit-btn');
+            eb2.disabled = false;
+            eb2.textContent = '立即付款 ¥' + parseInt(price);
+        }
+    }
+
+    function updateUI() {
+        // 左侧 active
+        document.querySelectorAll('.buy-product-item').forEach(el => {
+            el.classList.toggle('active', parseInt(el.dataset.index) === selectedProductIdx);
+        });
+        // 中间面板切换
+        document.querySelectorAll('.buy-plans-panel').forEach(el => {
+            el.classList.toggle('active', parseInt(el.dataset.index) === selectedProductIdx);
+        });
+        updateSubmitBtn();
+    }
+
+    function updateSubmitBtn() {
+        const btn = document.getElementById('submit-btn');
+        if (selectedPlan) {
+            btn.disabled = false;
+            btn.textContent = '立即付款 ¥' + parseInt(selectedPlan.price);
+        } else {
+            btn.disabled = true;
+            btn.textContent = '选择套餐后付款';
+        }
+    }
+    </script>
+</body>
+</html>

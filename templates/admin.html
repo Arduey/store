@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - 爱发电收款</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif; background:#f2f2f7; color:#1d1d1f; -webkit-font-smoothing:antialiased; }
+        h1 { font-size:26px; font-weight:700; letter-spacing:-0.3px; margin-bottom:4px; }
+        .subtitle { color:#6e6e73; font-size:14px; margin-bottom:32px; }
+
+        .section { background:rgba(255,255,255,0.78); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-radius:14px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.06); overflow:hidden; border:1px solid rgba(0,0,0,0.04); }
+        .section-head { padding:16px 24px; cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:space-between; transition:background 0.15s; }
+        .section-head:hover { background:rgba(0,0,0,0.02); }
+        .section-head h2 { font-size:16px; font-weight:600; margin:0; letter-spacing:-0.1px; }
+        .section-head .arrow { font-size:14px; color:#aeaeb2; transition:transform 0.2s; }
+        .section-head.collapsed .arrow { transform:rotate(-90deg); }
+        .section-body { padding:0 24px 20px; }
+        .section-body.collapsed { display:none; }
+
+        .form-row { display:flex; align-items:center; margin-bottom:12px; gap:10px; }
+        .form-row label { width:130px; text-align:right; font-size:13px; color:#6e6e73; flex-shrink:0; font-weight:500; }
+        .form-row input, .form-row textarea { flex:1; padding:9px 12px; border:1px solid #d2d2d7; border-radius:8px; font-size:14px; background:#fff; transition:border-color 0.15s; }
+        .form-row textarea { resize:vertical; min-height:40px; font-family:inherit; }
+        .form-row input:focus, .form-row textarea:focus { border-color:#0071e3; outline:none; box-shadow:0 0 0 3px rgba(0,113,227,0.1); }
+
+        .product-block { border:1px solid rgba(0,0,0,0.06); border-radius:12px; margin-bottom:10px; overflow:hidden; background:rgba(255,255,255,0.6); transition:all 0.2s; }
+        .product-block.drag-over { border-color:#0071e3; box-shadow:0 0 0 3px rgba(0,113,227,0.08); }
+        .product-block.dragging { opacity:0.5; }
+        .product-head { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; user-select:none; transition:background 0.15s; }
+        .product-head:hover { background:rgba(0,0,0,0.02); }
+        .product-head .drag-handle { color:#aeaeb2; cursor:grab; font-size:16px; padding:0 2px; }
+        .product-head .drag-handle:active { cursor:grabbing; }
+        .product-head .arrow { font-size:12px; color:#aeaeb2; transition:transform 0.2s; }
+        .product-head.collapsed .arrow { transform:rotate(-90deg); }
+        .product-head input { flex:1; padding:7px 10px; border:1px solid #d2d2d7; border-radius:8px; font-size:14px; font-weight:500; background:#fff; }
+        .product-head input:focus { border-color:#0071e3; outline:none; box-shadow:0 0 0 3px rgba(0,113,227,0.1); }
+        .product-head .btn-group { display:flex; gap:4px; flex-shrink:0; }
+        .product-body { padding:4px 16px 16px; }
+        .product-body.collapsed { display:none; }
+
+        .product-desc { margin-bottom:10px; }
+        .product-desc textarea { width:100%; padding:7px 10px; border:1px solid #d2d2d7; border-radius:8px; font-size:13px; resize:vertical; min-height:32px; font-family:inherit; background:#fff; }
+        .product-desc textarea:focus { border-color:#0071e3; outline:none; box-shadow:0 0 0 3px rgba(0,113,227,0.1); }
+
+        .plan-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:8px 12px; background:#fff; border:1px solid rgba(0,0,0,0.05); border-radius:10px; transition:all 0.15s; }
+        .plan-row.drag-over { border-color:#0071e3; background:rgba(0,113,227,0.03); }
+        .plan-row.dragging { opacity:0.5; }
+        .plan-row .drag-handle { color:#aeaeb2; cursor:grab; font-size:14px; padding:0 2px; }
+        .plan-row input { padding:5px 8px; border:1px solid #d2d2d7; border-radius:6px; font-size:13px; background:#fff; }
+        .plan-row input:focus { border-color:#0071e3; outline:none; box-shadow:0 0 0 2px rgba(0,113,227,0.1); }
+        .plan-row input.months { width:70px; }
+        .plan-row input.price { width:90px; }
+        .plan-row .plan-label { font-size:12px; color:#6e6e73; min-width:45px; }
+        .plan-row .plan-label.special { color:#34c759; font-weight:600; }
+        .plan-row input[type=number] { -moz-appearance:textfield; }
+        .plan-row input[type=number]::-webkit-outer-spin-button,
+        .plan-row input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+
+        /* 套餐卡片网格 */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 8px;
+        }
+        .plan-card-admin {
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 10px;
+            padding: 10px;
+            position: relative;
+            transition: all 0.15s;
+        }
+        .plan-card-admin.drag-over { border-color:#0071e3; background:rgba(0,113,227,0.03); }
+        .plan-card-admin .drag-handle {
+            position: absolute; top: 6px; left: 8px;
+            color: #aeaeb2; cursor: grab; font-size: 13px;
+        }
+        .plan-card-del {
+            position: absolute; top: 6px; right: 6px;
+            border: none; background: none; color: #ccc; cursor: pointer;
+            font-size: 16px; line-height: 1; padding: 0 4px;
+        }
+        .plan-card-del:hover { color: #ff3b30; }
+        .plan-card-row {
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 4px;
+        }
+        .plan-card-row label {
+            font-size: 11px; color: #aeaeb2; width: 22px; text-align: right; flex-shrink: 0;
+        }
+        .plan-card-row input {
+            flex: 1; padding: 4px 6px; border: 1px solid #d2d2d7; border-radius: 5px;
+            font-size: 13px; background: #fff; min-width: 0;
+        }
+        .plan-card-row input:focus { border-color:#0071e3; outline:none; box-shadow:0 0 0 2px rgba(0,113,227,0.1); }
+        .plan-card-row input[type=number] { -moz-appearance:textfield; }
+        .plan-card-row input[type=number]::-webkit-outer-spin-button,
+        .plan-card-row input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+        .add-plan-row input[type=number] { -moz-appearance:textfield; }
+        .add-plan-row input[type=number]::-webkit-outer-spin-button,
+        .add-plan-row input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+        .plan-row input.months { width:70px; }
+        .plan-row input.price { width:90px; }
+        .plan-row .plan-label { font-size:12px; color:#6e6e73; min-width:45px; }
+        .plan-row .plan-label.special { color:#34c759; font-weight:600; }
+
+        .add-plan-row { margin-top:8px; display:flex; align-items:center; gap:8px; }
+        .add-plan-row input { padding:5px 8px; border:1px solid #d2d2d7; border-radius:6px; font-size:13px; background:#fff; }
+        .add-plan-row input.months { width:70px; }
+        .add-plan-row input.price { width:90px; }
+
+        .btn { padding:7px 18px; border:none; border-radius:20px; cursor:pointer; font-size:13px; font-weight:500; transition:all 0.15s; letter-spacing:-0.1px; }
+        .btn-primary { background:#0071e3; color:#fff; }
+        .btn-primary:hover { background:#0077ed; }
+        .btn-danger { background:#fff; color:#ff3b30; border:1px solid rgba(255,59,48,0.2); }
+        .btn-danger:hover { background:rgba(255,59,48,0.05); }
+        .btn-sm { padding:5px 12px; font-size:12px; }
+        .btn-success { background:#0071e3; color:#fff; font-size:16px; padding:13px 44px; }
+        .btn-success:hover { background:#0077ed; }
+
+        /* 容器 */
+        .container {
+            padding: 2.5%;
+            margin: 0 auto;
+        }
+
+        /* 左右布局 */
+        .admin-layout { display: flex; gap: 20px; align-items: flex-start; }
+        .admin-left { width: 45%; flex-shrink: 0; }
+        .admin-right { flex: 1; width: 50%; }
+        .admin-left .form-row label { width: 110px; }
+        @media (max-width: 850px) {
+            .admin-layout { flex-direction: column; }
+            .admin-left { width: 100%; }
+            .admin-right { width: 100%; }
+        }
+
+        /* 右上保存按钮 */
+        .save-top-btn {
+            position: absolute; top: 28px; right: 2.5%;
+            z-index: 10;
+        }
+        @keyframes savePop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); background: #34c759; color: #fff; }
+            100% { transform: scale(1); }
+        }
+        .save-top-btn.saved {
+            animation: savePop 0.5s ease;
+            background: #34c759;
+            pointer-events: none;
+        }
+        .msg { text-align:center; margin-top:12px; font-size:14px; display:none; }
+        .msg.ok { color:#34c759; }
+        .msg.err { color:#ff3b30; }
+
+        .login-box { background:rgba(255,255,255,0.78); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-radius:16px; padding:44px; max-width:380px; margin:80px auto; box-shadow:0 4px 24px rgba(0,0,0,0.06); text-align:center; border:1px solid rgba(0,0,0,0.04); }
+        .login-box h2 { font-size:22px; margin-bottom:6px; font-weight:700; letter-spacing:-0.3px; }
+        .login-box input { width:100%; padding:12px; border:1px solid #d2d2d7; border-radius:10px; font-size:15px; margin:16px 0; }
+        .login-box input:focus { border-color:#0071e3; outline:none; box-shadow:0 0 0 3px rgba(0,113,227,0.1); }
+        .login-box .btn { width:100%; padding:13px; font-size:16px; margin-top:4px; }
+
+        /* 确认弹窗 */
+        .toast-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.15s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .toast-box {
+            background: rgba(255,255,255,0.96); backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px; padding: 24px; max-width: 360px; width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12); text-align: center;
+        }
+        .toast-box p { font-size: 15px; margin-bottom: 20px; color: #1d1d1f; }
+        .toast-box .toast-btns { display: flex; gap: 10px; justify-content: center; }
+    </style>
+</head>
+<body>
+<div id="login-page" class="login-box">
+    <h2>🔐 后台登录</h2>
+    <p style="color:#999;font-size:13px;">请输入管理密码</p>
+    <input type="password" id="login-pwd" placeholder="管理密码" autofocus>
+    <button class="btn btn-primary" onclick="doLogin()">登 录</button>
+    <div id="login-msg" class="msg"></div>
+</div>
+
+<div id="admin-page" class="container" style="display:none; position: relative;">
+    <h1>⚙️ 后台管理</h1>
+    <p class="subtitle">配置爱发电收款信息和管理商品</p>
+    <button class="btn btn-success save-top-btn" onclick="saveConfig()">💾 保存配置</button>
+
+    <div class="admin-layout">
+        <!-- 左侧：设置 -->
+        <div class="admin-left">
+            <div class="section" id="sec-afdian">
+                <div class="section-head collapsed" onclick="toggleSection('sec-afdian')">
+                    <h2>🔑 爱发电配置</h2><span class="arrow">▼</span>
+                </div>
+                <div class="section-body collapsed">
+                    <div class="form-row"><label>大号 user_id</label><input id="cfg-user-id" placeholder="收款方（创作者）的 user_id"></div>
+                    <div class="form-row"><label>小号 auth_token</label><input id="cfg-auth-token" placeholder="启动后自动从 Quicker 获取" readonly style="background:#f5f5f5;"><button class="btn btn-primary btn-sm" onclick="refreshToken()" style="margin-left:6px;flex-shrink:0;">🔄</button></div>
+                    <div class="form-row"><label>管理密码</label><input id="cfg-pwd" type="password" placeholder="修改管理密码（留空不修改）"></div>
+                </div>
+            </div>
+
+            <div class="section" id="sec-quicker">
+                <div class="section-head collapsed" onclick="toggleSection('sec-quicker')">
+                    <h2>📲 Quicker</h2><span class="arrow">▼</span>
+                </div>
+                <div class="section-body collapsed">
+                    <div class="form-row"><label>推送邮箱</label><input id="cfg-qk-touser" placeholder="Quicker 账号邮箱"></div>
+                    <div class="form-row"><label>推送 Code</label><input id="cfg-qk-code" placeholder="长链接推送 code"></div>
+                    <div class="form-row"><label>设备名</label><input id="cfg-qk-device" placeholder="可选"></div>
+                    <div class="form-row"><label>动作名/ID</label><input id="cfg-qk-action" placeholder="Quicker 动作名称或ID"></div>
+                </div>
+            </div>
+
+            <div class="section" id="sec-site">
+                <div class="section-head collapsed" onclick="toggleSection('sec-site')">
+                    <h2>🌐 站点设置</h2><span class="arrow">▼</span>
+                </div>
+                <div class="section-body collapsed">
+                    <div class="form-row"><label>页头 Logo</label><input id="cfg-site-logo" placeholder="如：乐昂岚"></div>
+                    <div class="form-row"><label>Logo 图标URL</label><input id="cfg-site-icon" placeholder="如：https://..."></div>
+                    <div class="form-row"><label>导航链接</label><textarea id="cfg-site-nav" placeholder="每行：标签|URL&#10;如：帮助|https://help.com" style="flex:1;height:60px;font-size:13px;"></textarea></div>
+                    <div class="form-row"><label>页脚文字</label><input id="cfg-site-footer" placeholder="如：by 乐昂岚"></div>
+            <div class="form-row"><label>支付提示</label><textarea id="cfg-site-tips" placeholder="付款页面显示的提示信息（支持多行）" style="flex:1;height:60px;font-size:13px;"></textarea></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：商品管理 -->
+        <div class="admin-right">
+            <div class="section">
+                <div class="section-head" onclick="toggleSection('sec-products')" id="sec-products-head">
+                    <h2>📦 商品管理</h2><span class="arrow">▼</span>
+                </div>
+                <div class="section-body" id="sec-products-body">
+                    <div id="products-area"></div>
+                    <button class="btn btn-primary" onclick="addProduct()" style="margin-top:10px;">+ 添加商品</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let PWD = '';
+let config = null;
+let collapsedProducts = {}; // { pi: true } 折叠状态
+
+function toggleSection(id) {
+    const sec = document.getElementById(id);
+    const head = sec.querySelector('.section-head');
+    const body = sec.querySelector('.section-body');
+    head.classList.toggle('collapsed');
+    body.classList.toggle('collapsed');
+}
+
+// ========== 登录 ==========
+
+async function doLogin() {
+    const pwd = document.getElementById('login-pwd').value;
+    if (!pwd) return;
+    try {
+        const resp = await fetch('/admin/login', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({password: pwd}),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            PWD = pwd;
+            sessionStorage.setItem('afd_admin_pwd', pwd);
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('admin-page').style.display = 'block';
+            loadConfig();
+        } else {
+            showLoginMsg(data.error || '密码错误', 'err');
+        }
+    } catch (e) { showLoginMsg('网络错误: ' + e.message, 'err'); }
+}
+
+function showLoginMsg(text, type) {
+    const el = document.getElementById('login-msg');
+    el.textContent = text; el.className = 'msg ' + (type || 'err'); el.style.display = 'block';
+}
+
+(function() {
+    const saved = sessionStorage.getItem('afd_admin_pwd');
+    if (saved) { PWD = saved; document.getElementById('login-page').style.display = 'none'; document.getElementById('admin-page').style.display = 'block'; loadConfig(); }
+})();
+
+document.getElementById('login-pwd').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+
+// ========== 管理 ==========
+
+async function loadConfig() {
+    try {
+        const resp = await fetch('/admin/config?pwd=' + encodeURIComponent(PWD));
+        if (resp.status === 403) { sessionStorage.removeItem('afd_admin_pwd'); location.reload(); return; }
+        config = await resp.json();
+        document.getElementById('cfg-user-id').value = config.creator_user_id || '';
+        document.getElementById('cfg-auth-token').value = config.small_auth_token || '';
+        document.getElementById('cfg-pwd').value = '';
+        var qk = config.quicker || {};
+        document.getElementById('cfg-qk-touser').value = qk.toUser || '';
+        document.getElementById('cfg-qk-code').value = qk.code || '';
+        document.getElementById('cfg-qk-device').value = qk.toDevice || '';
+        document.getElementById('cfg-qk-action').value = qk.action || '';
+        // 站点配置
+        var site = config.site || {};
+        document.getElementById('cfg-site-logo').value = site.header_logo || '';
+        document.getElementById('cfg-site-icon').value = site.header_icon_url || '';
+        document.getElementById('cfg-site-footer').value = site.footer_text || '';
+        document.getElementById('cfg-site-tips').value = site.pay_tips || '';
+        var navLines = (site.header_nav || []).map(function(l) { return l.label + '|' + l.url; });
+        document.getElementById('cfg-site-nav').value = navLines.join('\n');
+        renderProducts();
+    } catch (e) { showMsg('加载配置失败: ' + e.message, 'err'); }
+}
+
+function renderProducts() {
+    const area = document.getElementById('products-area');
+    if (!config.products || config.products.length === 0) {
+        area.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">暂无商品，点击下方按钮添加</p>';
+        return;
+    }
+    area.innerHTML = config.products.map((product, pi) => {
+        const pid = 'prod-' + pi;
+        const isCollapsed = collapsedProducts[pi] !== undefined ? collapsedProducts[pi] : true;
+        return `<div class="product-block" id="${pid}"
+                 ondragover="onDragOver(event)"
+                 ondrop="onDrop(event, ${pi}, 'product')">
+            <div class="product-head${isCollapsed ? ' collapsed' : ''}" onclick="toggleProduct(${pi})">
+                <span class="drag-handle" draggable="true"
+                      ondragstart="onDragStart(event, ${pi}, 'product')"
+                      ondragend="onDragEnd(event)">⠿</span>
+                <span class="arrow">▶</span>
+                <input value="${escHtml(product.name)}" placeholder="商品名称"
+                       onchange="updateProductField(${pi}, 'name', this.value)"
+                       onclick="event.stopPropagation()">
+                <span class="btn-group">
+                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();addPlan(${pi})">+套餐</button>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();removeProduct(${pi})">删除</button>
+                </span>
+            </div>
+            <div class="product-body${isCollapsed ? ' collapsed' : ''}">
+                <div class="product-desc">
+                    <textarea placeholder="商品说明（可选）"
+                              onchange="updateProductField(${pi}, 'description', this.value)">${escHtml(product.description || '')}</textarea>
+                </div>
+                <div style="margin-bottom:10px;">
+                    <input placeholder="商品链接（可选，如 https://...）" style="width:100%;padding:7px 10px;border:1px solid #d2d2d7;border-radius:8px;font-size:13px;"
+                           value="${escHtml(product.url || '')}"
+                           onchange="updateProductField(${pi}, 'url', this.value)">
+                </div>
+                <div class="plans-grid" id="plans-${pi}">
+                    ${(product.plans || []).map((plan, mi) => `
+                        <div class="plan-card-admin"
+                             ondragover="onDragOver(event)"
+                             ondrop="onPlanDrop(event, ${pi}, ${mi})">
+                            <span class="drag-handle" draggable="true"
+                                  ondragstart="onPlanDragStart(event, ${pi}, ${mi})"
+                                  ondragend="onDragEnd(event)">⠿</span>
+                            <button class="plan-card-del" onclick="removePlan(${pi}, ${mi})">×</button>
+                            <div class="plan-card-row"><label>数量</label><input class="months" type="number" value="${plan.number || 1}" min="1" onchange="updatePlan(${pi}, ${mi}, 'number', parseInt(this.value)||1)"></div>
+                            <div class="plan-card-row"><label>单位</label><input class="unit-inp" type="text" value="${escHtml(plan.unit || '月')}" placeholder="单位" onchange="updatePlan(${pi}, ${mi}, 'unit', this.value)"></div>
+                            <div class="plan-card-row"><label>¥</label><input class="price" type="number" value="${plan.price}" min="5" onchange="updatePlan(${pi}, ${mi}, 'price', parseFloat(this.value)||0)"></div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="add-plan-row">
+                    <input class="months" id="new-months-${pi}" type="number" min="1" placeholder="数量">
+                    <input id="new-unit-${pi}" type="text" placeholder="单位">
+                    <span>¥</span>
+                    <input class="price" id="new-price-${pi}" type="number" min="5" placeholder="价格">
+                    <button class="btn btn-primary btn-sm" onclick="addPlan(${pi})">+ 添加</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleProduct(pi) {
+    var cur = collapsedProducts[pi] !== undefined ? collapsedProducts[pi] : true;
+    collapsedProducts[pi] = !cur;
+    renderProducts();
+}
+
+// ========== 字段更新 ==========
+
+function updateProductField(pi, field, value) { config.products[pi][field] = value; }
+function updatePlan(pi, mi, field, value) { config.products[pi].plans[mi][field] = value; renderProducts(); }
+
+// ========== 添加/删除 ==========
+
+function addProduct() {
+    config.products = config.products || [];
+    config.products.push({ name: '新商品', description: '', plans: [] });
+    collapsedProducts[config.products.length - 1] = false;  // 新商品展开
+    renderProducts();
+}
+
+function removeProduct(pi) {
+    showConfirm('确定删除「' + (config.products[pi].name || '') + '」吗？', function() {
+        config.products.splice(pi, 1);
+        delete collapsedProducts[pi];
+        renderProducts();
+    });
+}
+
+function addPlan(pi) {
+    const number = parseInt(document.getElementById('new-months-' + pi).value) || 1;
+    const unit = document.getElementById('new-unit-' + pi).value.trim() || '月';
+    const price = parseFloat(document.getElementById('new-price-' + pi).value) || 0;
+    if (number < 1) { alert('数量必须大于0'); return; }
+    if (price < 5) { alert('价格不能低于5元'); return; }
+    config.products[pi].plans.push({ number, unit, price });
+    collapsedProducts[pi] = false;
+    renderProducts();
+    setTimeout(() => {
+        var inp = document.getElementById('new-months-' + pi);
+        if (inp) inp.focus();
+    }, 100);
+}
+
+function removePlan(pi, mi) {
+    config.products[pi].plans.splice(mi, 1);
+    renderProducts();
+}
+
+// ========== 拖拽排序 ==========
+
+let dragType = null;
+let dragIndex = null;
+let dragPlanPi = null;
+
+function onDragStart(e, index, type) {
+    dragType = type; dragIndex = index;
+    e.target.closest('.product-block, .plan-row')?.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+}
+
+function onPlanDragStart(e, pi, mi) {
+    dragType = 'plan'; dragPlanPi = pi; dragIndex = mi;
+    e.target.closest('.plan-card-admin')?.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+    e.stopPropagation();
+}
+
+function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function onDragEnd(e) {
+    document.querySelectorAll('.dragging, .drag-over').forEach(el => {
+        el.classList.remove('dragging', 'drag-over');
+    });
+}
+
+function onDrop(e, toIndex, type) {
+    e.preventDefault();
+    if (dragType !== type) return;
+    if (dragIndex === toIndex) return;
+
+    if (type === 'product') {
+        const item = config.products.splice(dragIndex, 1)[0];
+        config.products.splice(toIndex, 0, item);
+        // 同步折叠状态
+        const newCollapsed = {};
+        Object.keys(collapsedProducts).forEach(k => {
+            let idx = parseInt(k);
+            if (idx === dragIndex) idx = toIndex;
+            else if (dragIndex < toIndex && idx > dragIndex && idx <= toIndex) idx--;
+            else if (dragIndex > toIndex && idx >= toIndex && idx < dragIndex) idx++;
+            newCollapsed[idx] = true;
+        });
+        collapsedProducts = newCollapsed;
+        renderProducts();
+    }
+}
+
+function onPlanDrop(e, pi, toMi) {
+    e.preventDefault(); e.stopPropagation();
+    if (dragType !== 'plan' || dragPlanPi !== pi) return;
+    if (dragIndex === toMi) return;
+
+    const plans = config.products[pi].plans;
+    const item = plans.splice(dragIndex, 1)[0];
+    plans.splice(toMi, 0, item);
+    renderProducts();
+}
+
+// ========== 保存 ==========
+
+async function saveConfig() {
+    config.creator_user_id = document.getElementById('cfg-user-id').value.trim();
+    if (!config.creator_user_id) { showMsg('请填写大号 user_id', 'err'); return; }
+
+    config.quicker = config.quicker || {};
+    config.quicker.toUser = document.getElementById('cfg-qk-touser').value.trim();
+    config.quicker.code = document.getElementById('cfg-qk-code').value.trim();
+    config.quicker.toDevice = document.getElementById('cfg-qk-device').value.trim();
+    config.quicker.action = document.getElementById('cfg-qk-action').value.trim();
+
+    // 站点配置
+    config.site = {};
+    config.site.header_logo = document.getElementById('cfg-site-logo').value.trim();
+    config.site.header_icon_url = document.getElementById('cfg-site-icon').value.trim();
+    config.site.footer_text = document.getElementById('cfg-site-footer').value.trim();
+    config.site.pay_tips = document.getElementById('cfg-site-tips').value.trim();
+    var navRaw = document.getElementById('cfg-site-nav').value.trim();
+    config.site.header_nav = [];
+    if (navRaw) {
+        navRaw.split('\n').forEach(function(line) {
+            var parts = line.trim().split('|');
+            if (parts.length >= 2 && parts[1]) {
+                config.site.header_nav.push({ label: parts[0].trim(), url: parts[1].trim() });
+            }
+        });
+    }
+
+
+    config._password = PWD;
+
+    try {
+        const resp = await fetch('/admin/save', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(config),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            const newPwd = document.getElementById('cfg-pwd').value.trim();
+            if (newPwd) { PWD = newPwd; sessionStorage.setItem('afd_admin_pwd', newPwd); }
+            var btn = document.querySelector('.save-top-btn');
+            btn.classList.add('saved');
+            btn.textContent = '✅ 已保存';
+            setTimeout(function() { btn.classList.remove('saved'); btn.textContent = '💾 保存配置'; }, 2000);
+            showMsg('✅ 配置已保存并生效', 'ok');
+            document.getElementById('cfg-pwd').value = '';
+        } else {
+            showMsg('保存失败: ' + (data.error || ''), 'err');
+        }
+    } catch (e) { showMsg('保存失败: ' + e.message, 'err'); }
+}
+
+function showMsg(text, type) {
+    var el = document.getElementById('msg-toast');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'msg-toast';
+        el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:20px;font-size:14px;font-weight:500;z-index:9999;transition:all 0.3s;pointer-events:none;';
+        document.body.appendChild(el);
+    }
+    el.textContent = text;
+    el.style.background = type === 'err' ? '#ff3b30' : '#34c759';
+    el.style.color = '#fff';
+    el.style.opacity = '1';
+    el.style.display = 'block';
+    clearTimeout(el._timer);
+    el._timer = setTimeout(function() { el.style.opacity = '0'; setTimeout(function() { el.style.display = 'none'; }, 300); }, 2000);
+}
+
+function showConfirm(text, onOk) {
+    // 移除已有弹窗
+    var existing = document.querySelector('.toast-overlay');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.className = 'toast-overlay';
+    overlay.innerHTML = '<div class="toast-box"><p>' + text + '</p><div class="toast-btns"><button class="btn btn-danger" id="confirm-ok">删除</button><button class="btn btn-primary" id="confirm-cancel">取消</button></div></div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('#confirm-ok').onclick = function() { document.body.removeChild(overlay); onOk(); };
+    overlay.querySelector('#confirm-cancel').onclick = function() { document.body.removeChild(overlay); };
+    overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+}
+
+async function refreshToken() {
+    showMsg('正在通过 Quicker 获取新 Token...', 'ok');
+    try {
+        const resp = await fetch('/admin/refresh-token', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({_password: PWD}),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            document.getElementById('cfg-auth-token').value = data.token;
+            showMsg('✅ Token 已刷新', 'ok');
+        } else {
+            showMsg('刷新失败: ' + (data.error || ''), 'err');
+        }
+    } catch (e) { showMsg('刷新失败: ' + e.message, 'err'); }
+}
+</script>
+</body>
+</html>

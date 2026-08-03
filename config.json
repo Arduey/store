@@ -1,0 +1,24 @@
+{
+    "creator_user_id": "改成你的大号user_id",
+    "small_auth_token": "已废弃，Token通过Quicker自动获取",
+    "admin_password": "admin123",
+    "quicker": {
+        "toUser": "你的Quicker邮箱@qq.com",
+        "code": "你的推送Code",
+        "toDevice": "",
+        "action": "你的动作ID"
+    },
+    "products": [
+        {
+            "name": "示例商品",
+            "plans": [
+                {"number": 1, "unit": "月", "price": 10},
+                {"number": 3, "unit": "月", "price": 28},
+                {"number": 1, "unit": "年", "price": 100},
+                {"number": 9999, "unit": "永久", "price": 299}
+            ],
+            "description": "这是一个示例商品",
+            "url": ""
+        }
+    ]
+}
