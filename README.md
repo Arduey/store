@@ -43,9 +43,18 @@
 - Python 3.10+
 - 宝塔面板（Python项目管理器）
 
-### 1. 上传项目
+### 1. 拉取项目
 
-宝塔面板 → 文件 → 进入 `/www/wwwroot/` → 新建文件夹 `pay` → 上传所有项目文件。
+宝塔面板 → 终端，执行：
+
+```bash
+cd /www/wwwroot
+git clone git@github.com:Arduey/store.git pay
+```
+
+> 如未配置 SSH Key，先执行 `ssh-keygen -t ed25519 -C "your@email.com"`，然后将 `~/.ssh/id_ed25519.pub` 内容添加到 GitHub → Settings → SSH Keys。
+>
+> 也可用 HTTPS：`git clone https://github.com/Arduey/store.git pay`
 
 ### 2. 创建 Python 项目
 
