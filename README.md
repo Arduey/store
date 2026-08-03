@@ -140,11 +140,20 @@
 
 ## 联系 & 赞赏
 
-- 作者：乐昂岚 (Arduey)
+**作者**：乐昂岚 (Arduey)
+
+| 微信 | QQ |
+|------|-----|
+| ![微信](https://cdn.nlark.com/yuque/0/2026/png/40551613/1774510099753-5c6f5dfe-9cbd-420c-9123-fab44ff7d174.png) | ![QQ](https://cdn.nlark.com/yuque/0/2026/png/40551613/1774510106836-e50e9a0d-6158-43d0-8a87-9c310f227360.png) |
+
 - 语雀：[arduey/lan](https://www.yuque.com/arduey/lan/yw9wy2r7bs6y5ccn)
 - Quicker 动作 / 技术支持：联系作者获取
 
-> 💰 如果这个项目对你有帮助，欢迎到[爱发电](https://ifdian.net)赞助支持！
+### 赞赏码
+
+![赞赏码](https://cdn.nlark.com/yuque/0/2026/jpeg/40551613/1774945478345-956d495f-78bf-4f45-bcb8-d3fb54b7d811.jpeg)
+
+> 💰 如果这个项目对你有帮助，欢迎赞赏支持！
 
 ## 安全提示
 
