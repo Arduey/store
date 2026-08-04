@@ -98,7 +98,7 @@ cp config.example.json config.json
 
 访问 `https://你的域名/admin`，默认密码 `admin123`，登录后在后台管理页配置：
 
-- **爱发电配置**：大号 user_id，刷新 auth_token
+- **爱发电配置**：大号 user_id
 - **站点设置**：Logo、导航链接、支付方式开关、支付提示
 - **Quicker 配置**：填写推送信息以启用 token 自动刷新
 - **商品管理**：添加商品和套餐，拖拽排序
@@ -172,7 +172,7 @@ cp config.example.json config.json
 - **非官方 API**：使用了爱发电的内部接口，有被封风险
 - **平台抽成 6%**：爱发电收取约 6% 服务费
 - **无数据库**：订单数据存内存，重启丢失。建议自行扩展 SQLite；也可直接在爱发电后台查看/管理订单
-- **auth_token 需定期刷新**：在管理页点击刷新按钮即可（需配置 Quicker）
+- **auth_token 自动获取**：通过 Quicker 子程序自动获取，无需手动管理（需配置 Quicker）
 
 ## 联系 & 赞赏
 
@@ -196,7 +196,7 @@ cp config.example.json config.json
 - 默认密码 `admin123`，请及时修改
 - 部署后建议开启 HTTPS
 - `config.json` 已 gitignore，不会被提交到仓库
-- 爱发电 token 不在本地存储，通过 Quicker 动态获取
+- 爱发电 token 自动获取，不在本地存储
 - 登录接口有频率限制防护
 
 ## License
