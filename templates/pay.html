@@ -143,16 +143,11 @@
             const data = await resp.json();
 
             if (PAY_TYPE === 'alipay' && data.type === 'url') {
-                container.innerHTML = '<div class="pay-iframe-wrapper">'
-                    + '<iframe src="' + data.url + '" '
-                    + 'sandbox="allow-scripts allow-same-origin allow-forms" '
-                    + 'loading="lazy" class="alipay-iframe"></iframe>'
-                    + '</div>';
-                document.getElementById("qr-label").textContent = '支付宝扫码';
+                // 支付宝：直接显示跳转付款按钮
+                container.innerHTML = '<a href="' + data.url + '" target="_blank" class="btn btn-primary btn-large">在支付宝中付款</a>';
+                document.getElementById("qr-label").textContent = '点击按钮跳转支付宝付款';
                 document.getElementById("qr-label").style.color = 'var(--accent)';
                 document.getElementById("qr-label").style.display = 'block';
-                document.getElementById("open-btn").href = data.url;
-                document.getElementById("open-btn-row").style.display = 'block';
             } else if (data.type === 'url') {
                 container.innerHTML = '<div id="qrcode"></div>';
                 try {

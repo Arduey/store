@@ -380,27 +380,12 @@ async def get_order_qrcode(out_trade_no: str):
     if not redirect_url:
         return JSONResponse({"error": "无支付链接"}, status_code=404)
 
-    # 微信：返回链接给前端 qrcode.js 生成二维码
-    if pay_type == "wechat":
+    # 支付宝：直接返回链接，前端显示跳转按钮
+    if pay_type == "alipay":
         return JSONResponse({"type": "url", "url": redirect_url})
 
-    # 支付宝：通过 Quicker 长链接推送抓取二维码
-    try:
-        b64_data = await quicker_call("order" + redirect_url)
-        if not b64_data or len(b64_data) < 100:
-            print(f"[Quicker] 返回内容异常: {b64_data[:200]}")
-            return JSONResponse({"type": "url", "url": redirect_url})
-
-        # Quicker 返回的已经是完整的 data URI
-        if b64_data.startswith("data:"):
-            return JSONResponse({"type": "image", "data_uri": b64_data})
-        # 纯 base64 的情况，补上 data 头
-        return JSONResponse({
-            "type": "image",
-            "data_uri": f"data:image/png;base64,{b64_data}",
-        })
-    except Exception as e:
-        print(f"[Quicker异常] {e}")
+    # 微信：返回链接给前端 qrcode.js 生成二维码
+    if pay_type == "wechat":
         return JSONResponse({"type": "url", "url": redirect_url})
 
 
