@@ -293,6 +293,8 @@ async def create_order(
     pay_info = PAY_TYPES.get(pay_type)
     if not pay_info:
         return JSONResponse({"error": "不支持的支付方式"}, status_code=400)
+    if pay_type == "alipay":
+        return JSONResponse({"error": "支付宝暂不可用，请选择微信支付"}, status_code=400)
 
     remark = f"{product_name}-{months}"
 
