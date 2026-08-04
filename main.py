@@ -298,7 +298,7 @@ async def create_order(
     if pay_type == "alipay":
         return JSONResponse({"error": "支付宝暂不可用，请选择微信支付"}, status_code=400)
 
-    remark = f"{product_name}-{months}"
+    remark = f"{product_name}-{months}-{unit}"
 
     # 调爱发电创建订单
     ok, result = await afdian_create_order(
