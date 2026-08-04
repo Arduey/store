@@ -539,6 +539,8 @@ async function saveConfig() {
         });
     }
 
+    var newPwd = document.getElementById('cfg-pwd').value.trim();
+    if (newPwd) config.admin_password = newPwd;
 
     config._password = PWD;
 

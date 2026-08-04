@@ -83,9 +83,14 @@
                         <img src="https://files.getquicker.net/_icons/DD2720346D6979233AAD2D58E2FC1BB8CF2AA1B6.png" width="20" height="20" alt="">
                         微信
                     </button>
+                    {% else %}
+                    <button class="pay-type-btn" data-pay="wechat" disabled title="暂不可用">
+                        <img src="https://files.getquicker.net/_icons/DD2720346D6979233AAD2D58E2FC1BB8CF2AA1B6.png" width="20" height="20" alt="" style="opacity:0.4;">
+                        微信（暂不可用）
+                    </button>
                     {% endif %}
                     {% if site.alipay_enabled %}
-                    <button class="pay-type-btn" data-pay="alipay">
+                    <button class="pay-type-btn{% if not site.wechat_enabled %} active{% endif %}" data-pay="alipay">
                         <img src="https://files.getquicker.net/_icons/2ED559C1E1B522832FCB519D49E7ECD3B512ECE9.png" width="20" height="20" alt="">
                         支付宝
                     </button>
