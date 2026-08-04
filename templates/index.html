@@ -78,14 +78,23 @@
             <div class="buy-right">
                 <div class="buy-right-title">支付方式</div>
                 <div class="buy-pay-btns">
-                    <button class="pay-type-btn" data-pay="alipay" disabled title="暂不可用">
-                        <img src="https://files.getquicker.net/_icons/2ED559C1E1B522832FCB519D49E7ECD3B512ECE9.png" width="20" height="20" alt="">
-                        支付宝（暂不可用）
-                    </button>
+                    {% if site.wechat_enabled %}
                     <button class="pay-type-btn active" data-pay="wechat">
                         <img src="https://files.getquicker.net/_icons/DD2720346D6979233AAD2D58E2FC1BB8CF2AA1B6.png" width="20" height="20" alt="">
                         微信
                     </button>
+                    {% endif %}
+                    {% if site.alipay_enabled %}
+                    <button class="pay-type-btn" data-pay="alipay">
+                        <img src="https://files.getquicker.net/_icons/2ED559C1E1B522832FCB519D49E7ECD3B512ECE9.png" width="20" height="20" alt="">
+                        支付宝
+                    </button>
+                    {% else %}
+                    <button class="pay-type-btn" data-pay="alipay" disabled title="暂不可用">
+                        <img src="https://files.getquicker.net/_icons/2ED559C1E1B522832FCB519D49E7ECD3B512ECE9.png" width="20" height="20" alt="" style="opacity:0.4;">
+                        支付宝（暂不可用）
+                    </button>
+                    {% endif %}
                 </div>
                 <button class="btn btn-primary btn-large buy-submit-btn" id="submit-btn" disabled>
                     选择套餐后付款
@@ -103,7 +112,7 @@
     <script>
     let selectedProductIdx = 0;   // 默认第一个
     let selectedPlan = null;      // 选中的套餐 {name, months, price}
-    let selectedPayType = 'wechat';
+    let selectedPayType = document.querySelector('.pay-type-btn:not([disabled])')?.dataset.pay || 'wechat';
 
     function toggleMenu() {
         document.getElementById('header-nav').classList.toggle('open');

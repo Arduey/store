@@ -72,6 +72,8 @@ def get_site_config() -> dict:
         "header_nav": site.get("header_nav", []),
         "footer_text": site.get("footer_text", ""),
         "pay_tips": site.get("pay_tips", ""),
+        "alipay_enabled": site.get("alipay_enabled", False),
+        "wechat_enabled": site.get("wechat_enabled", True),
     }
 
 

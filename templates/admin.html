@@ -230,6 +230,11 @@
                     <div class="form-row"><label>导航链接</label><textarea id="cfg-site-nav" placeholder="每行：标签|URL&#10;如：帮助|https://help.com" style="flex:1;height:60px;font-size:13px;"></textarea></div>
                     <div class="form-row"><label>页脚文字</label><input id="cfg-site-footer" placeholder="如：by 乐昂岚"></div>
             <div class="form-row"><label>支付提示</label><textarea id="cfg-site-tips" placeholder="付款页面显示的提示信息（支持多行）" style="flex:1;height:60px;font-size:13px;"></textarea></div>
+            <div class="form-row">
+                <label>支付方式</label>
+                <label style="width:auto;font-weight:400;font-size:13px;"><input type="checkbox" id="cfg-site-alipay" checked> 支付宝</label>
+                <label style="width:auto;font-weight:400;font-size:13px;margin-left:16px;"><input type="checkbox" id="cfg-site-wechat" checked> 微信</label>
+            </div>
                 </div>
             </div>
         </div>
@@ -318,6 +323,8 @@ async function loadConfig() {
         document.getElementById('cfg-site-icon').value = site.header_icon_url || '';
         document.getElementById('cfg-site-footer').value = site.footer_text || '';
         document.getElementById('cfg-site-tips').value = site.pay_tips || '';
+        document.getElementById('cfg-site-alipay').checked = site.alipay_enabled !== false;
+        document.getElementById('cfg-site-wechat').checked = site.wechat_enabled !== false;
         var navLines = (site.header_nav || []).map(function(l) { return l.label + '|' + l.url; });
         document.getElementById('cfg-site-nav').value = navLines.join('\n');
         renderProducts();
@@ -519,6 +526,8 @@ async function saveConfig() {
     config.site.header_icon_url = document.getElementById('cfg-site-icon').value.trim();
     config.site.footer_text = document.getElementById('cfg-site-footer').value.trim();
     config.site.pay_tips = document.getElementById('cfg-site-tips').value.trim();
+    config.site.alipay_enabled = document.getElementById('cfg-site-alipay').checked;
+    config.site.wechat_enabled = document.getElementById('cfg-site-wechat').checked;
     var navRaw = document.getElementById('cfg-site-nav').value.trim();
     config.site.header_nav = [];
     if (navRaw) {
